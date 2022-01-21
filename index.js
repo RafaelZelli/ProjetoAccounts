@@ -4,6 +4,7 @@ const chalk = require('chalk')
 
 //modulos internos
 const fs = require('fs')
+const console = require('console')
 
 operation() //Chamando a função operation, para que mostre na tela ao iniciar o programa
 
@@ -14,7 +15,7 @@ function operation(){
         type: 'list',
         name:'action',
         message:'O que deseja fazer?',
-        choices: ['Criar conta', 'Consulta Saldo', 'Depositar', 'Sacar', 'Sair'],
+        choices: ['Criar conta', 'Consultar Saldo', 'Depositar', 'Sacar', 'Sair'],
         },
  ]).then((answer) =>{  //Escolher as opçoes acima e depois(then) irá ter uma resposta
         const action = answer['action']
@@ -24,11 +25,11 @@ function operation(){
             createAccount() //Nesse caso, irá para a função da mensagem criar conta(createAccount)
             buildAccount()  //Chama a função criar conta
         }else if(action === 'Consultar Saldo'){
-
+            getAccountBalance()
         }else if(action === 'Depositar'){
             deposit()
         }else if(action === 'Sacar'){
-
+            withdraw()
         }else if(action === 'Sair'){
             console.log(chalk.bgBlue.black('Obrigado por usar o Accounts!'))
             process.exit()   //Este comando encerra a execução do programa
@@ -117,7 +118,7 @@ function checkAccount(accountName){
 function addAmount(accountName, amount){
     const accountData = getAccount(accountName)
 
-    if(!amount){         //Se não tiver saldo(amount)...
+    if(!amount){         //Se não tiver digitado nada...
         console.log(chalk.bgRed.black("Ocorreu um erro, tente novamente"))
         return deposit()
     }
@@ -131,7 +132,7 @@ function addAmount(accountName, amount){
         console.log(err)
     },
     )
-    console.log(chalk.green(`Foi depositado o valor de R$${amount} na sua conta`))
+    console.log(chalk.green(`${accountName}, foi depositado o valor de R$${amount} na sua conta`))
 }
 
 //Função que lê o saldo no arquivo
@@ -143,3 +144,67 @@ function getAccount(accountName){
     return JSON.parse(accountJSON)   //transformando em Json novamente
 }
 
+//Função que mostra o saldo da conta
+function getAccountBalance(){
+    inquirer.prompt([{
+        name: 'accountName',
+        message: 'Qual o nome da sua conta?'
+    }]).then((answer) => {
+        const accountName = answer['accountName']
+        
+        //Verifica se a conta existe
+        if(!checkAccount(accountName)){
+            return getAccountBalance()
+        }
+        const accountData = getAccount(accountName)
+        console.log(chalk.bgBlue.black(`Olá ${accountName}, o saldo da sua conta é de R$${accountData.balance}`))
+        operation()
+    }).catch(err => console.log(err))
+}
+
+//Função de sacar
+function withdraw(){
+    inquirer.prompt([{
+        name: 'accountName',
+        message: 'Qual o nome da sua conta?'
+    }]).then((answer) => {
+        const accountName = answer['accountName']
+
+        if(!checkAccount(accountName)){
+            return withdraw()
+        }
+
+        inquirer.prompt([{
+            name: 'amount',
+            message: 'Quanto você deseja sacar?'
+        }]).then((answer) => {
+            const amount = answer['amount']
+            removeAmount(accountName, amount)            
+        })
+    }).catch(err => console.log(err))
+}
+
+
+//Função que remove o dinheiro da conta
+function removeAmount(accountName, amount){
+    const accountData = getAccount(accountName)
+
+    if(!amount){      //Caso não tenha digitado nada...
+        console.log(chalk.bgRed.black("Ocorreu um erro, tente novamente"))
+        return withdraw()
+    }
+    if(accountData.balance < amount){    //Caso o valor do saque for mais que tem disponivel na conta..
+        console.log(chalk.bgRed.black("Valor indisponível"))
+        return withdraw()
+    }
+    accountData.balance = parseFloat(accountData.balance) - parseFloat(amount)
+    fs.writeFileSync(
+        `accounts/${accountName}.json`,
+        JSON.stringify(accountData),
+        function(err){
+            console.log(err)
+        }
+    )
+    console.log(chalk.green(`Foi realizado um saque de R$${amount}`))
+    operation()
+}
