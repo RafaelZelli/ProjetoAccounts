@@ -21,8 +21,17 @@ function operation(){
 
         //Definindo para onde vai cada escolha
         if(action === 'Criar conta'){
-            createAccount() //Nesse caso, irá para a função criar conta(createAccount)
-            buildAccount()
+            createAccount() //Nesse caso, irá para a função da mensagem criar conta(createAccount)
+            buildAccount()  //Chama a função criar conta
+        }else if(action === 'Consultar Saldo'){
+
+        }else if(action === 'Depositar'){
+            deposit()
+        }else if(action === 'Sacar'){
+
+        }else if(action === 'Sair'){
+            console.log(chalk.bgBlue.black('Obrigado por usar o Accounts!'))
+            process.exit()   //Este comando encerra a execução do programa
         }
     })
    .catch((err) => console.log(err))
@@ -31,8 +40,7 @@ function operation(){
 //Função mensagem de criar conta
 function createAccount(){
     console.log(chalk.bgGreen.black('Parabens por escolher o nosso banco!'))
-    console.log(chalk.green('Defina as opçoes da sua conta a seguir'))
-    
+    console.log(chalk.green('Defina as opçoes da sua conta a seguir'))    
 }
 
 //Função para criar a conta
@@ -68,5 +76,30 @@ function buildAccount(){
         operation()
     })
     .catch((err) => console.log(err))
+}
+
+// Função de depositar 
+function deposit(){
+    inquirer.prompt([{
+        name: 'accountName',
+        message: 'Qual o nome da sua conta?'
+    }]).then((answer) => {
+        const accountName = answer['accountName']
+        
+        //Verifico se a conta existe
+        if(!checkAccount(accountName)){
+            return deposit()
+        }
+    })
+    .catch((err) => console.log(err))
+}
+
+//Função que verifica se a conta existe
+function checkAccount(accountName){
+    if(!fs.existsSync(`accounts/${accountName}.json`)){  //Se esta conta não existir...
+        console.log(chalk.bgRed.black("Esta conta não existe, escolha outro nome!"))
+        return false
+    }
+        return true
 }
 
