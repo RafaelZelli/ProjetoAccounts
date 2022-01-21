@@ -90,6 +90,16 @@ function deposit(){
         if(!checkAccount(accountName)){
             return deposit()
         }
+        inquirer.prompt([{
+            name: 'amount',
+            message: 'Quanto você deseja depositar?',
+        }]).then((answer) => {
+            const amount = answer['amount']
+
+            addAmount(accountName, amount)  //Adiciona a quantia no saldo
+            operation()  //Volta ao menu principal
+
+        }).catch((err) => console.log(err))
     })
     .catch((err) => console.log(err))
 }
@@ -101,5 +111,35 @@ function checkAccount(accountName){
         return false
     }
         return true
+}
+
+//Função que adiciona quantia no saldo
+function addAmount(accountName, amount){
+    const accountData = getAccount(accountName)
+
+    if(!amount){         //Se não tiver saldo(amount)...
+        console.log(chalk.bgRed.black("Ocorreu um erro, tente novamente"))
+        return deposit()
+    }
+    // Somando o valor do balance mais com o que foi depositado 
+    accountData.balance = parseFloat(amount) + parseFloat(accountData.balance)
+    //Depois vou salvar esta alteração no arquivo
+    fs.writeFileSync(
+    `accounts/${accountName}.json`,
+    JSON.stringify(accountData),   //Transforma JSON em texto
+    function(err){
+        console.log(err)
+    },
+    )
+    console.log(chalk.green(`Foi depositado o valor de R$${amount} na sua conta`))
+}
+
+//Função que lê o saldo no arquivo
+function getAccount(accountName){
+    const accountJSON = fs.readFileSync(`accounts/${accountName}.json`,{   //Lê o arquivo json
+        encoding: 'utf-8',
+        flag: 'r'   // 'r' read
+    })
+    return JSON.parse(accountJSON)   //transformando em Json novamente
 }
 
