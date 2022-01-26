@@ -15,7 +15,7 @@ function operation(){
         type: 'list',
         name:'action',
         message:'O que deseja fazer?',
-        choices: ['Criar conta', 'Consultar Saldo', 'Depositar', 'Sacar', 'Transferir', 'Sair'],
+        choices: ['Criar conta', 'Consultar Saldo', 'Depositar', 'Sacar', 'Transferir', 'Excluir conta', 'Sair'],
         },
  ]).then((answer) =>{  //Escolher as opçoes acima e depois(then) irá ter uma resposta
         const action = answer['action']
@@ -32,6 +32,8 @@ function operation(){
             withdraw()
         }else if(action === 'Transferir'){
             transfer()
+        }else if(action === 'Excluir conta'){
+            deleteAccount()
         }else if(action === 'Sair'){
             console.log(chalk.bgBlue.black('Obrigado por usar o Accounts!'))
             process.exit()   //Este comando encerra a execução do programa
@@ -63,8 +65,7 @@ function buildAccount(){
         }
 
         if(fs.existsSync(`accounts/${accountName}.json`)){  //Verificar se a conta já existe
-            console.log(chalk.bgRed.black("Esta conta já existe, escolha outro nome!"),
-            )
+            console.log(chalk.bgRed.black("Esta conta já existe, escolha outro nome!"))
             buildAccount()
             return     //Retornar para que não gere um bug no sistema
         }
@@ -85,11 +86,11 @@ function buildAccount(){
 function deposit(){
     inquirer.prompt([{
         name: 'accountName',
-        message: 'Qual o nome da sua conta?'
+        message: "Qual o nome da sua conta? "
     }]).then((answer) => {
         const accountName = answer['accountName']
         
-        //Verifico se a conta existe
+        //Verifico se a conta existe...
         if(!checkAccount(accountName)){
             return deposit()
         }
@@ -184,7 +185,7 @@ function getAccountBalance(){
 function withdraw(){
     inquirer.prompt([{
         name: 'accountName',
-        message: 'Qual o nome da sua conta?'
+        message: "Qual o nome da sua conta?"
     }]).then((answer) => {
         const accountName = answer['accountName']
 
@@ -197,6 +198,7 @@ function withdraw(){
             message: 'Quanto você deseja sacar?'
         }]).then((answer) => {
             const amount = answer['amount']
+            
             removeAmount(accountName, amount)            
         })
     }).catch(err => console.log(err))
@@ -227,12 +229,12 @@ function removeAmount(accountName, amount){
     operation()
 }
 
-//Função para transferir dinheiro 
+//Função para transferir dinheiro
 function transfer(){
 
     inquirer.prompt([{
         name: 'accountName',
-        message: 'Qual o nome da sua conta?'
+        message: "Qual o nome da sua conta?"
     }]).then((answer) => {
         const accountName = answer['accountName']
 
@@ -242,29 +244,29 @@ function transfer(){
 
         inquirer.prompt([{
             name: 'amount',
-            message: 'Quanto você deseja transferir?'
+            message: "Quanto você deseja transferir? "
         }]).then((answer) => {
             const amount = answer['amount']
+
             if(!amount){      //Caso não tenha digitado nada...
-                console.log(chalk.bgRed.black("Ocorreu um erro, tente novamente"))
+                console.log(chalk.bgRed.black("Ocorreu um erro, tente novamente"))                
                 return transfer()
             }
-
+        
             inquirer.prompt([{
                 name: 'accountName2',
                 message: 'Para quem você deseja transferir?'
             }]).then((answer) => {
                 const accountName2 = answer['accountName2']
-
-                if(!checkAccount2(accountName2)){                    
+                if(!checkAccount2(accountName2)){                 
                     return transfer()
                 }
                 transferirConta(accountName, accountName2, amount)
             })           
         })        
     }).catch(err => console.log(err))    
-}
-
+}        
+                
 
 //Função que transfere o dinheiro 
 function transferirConta(accountName, accountName2, amount){
@@ -302,6 +304,50 @@ function transferirConta(accountName, accountName2, amount){
     console.log(chalk.green(`Foi realizado uma transferência na conta de ${accountName} no valor de R$${amount} para ${accountName2}`))
     operation()
 }
+
+
+//Função Excluir Conta
+function deleteAccount(){
+    inquirer.prompt([{
+        name: 'accountName',
+        message: "Qual conta deseja excluir?  Digite 'voltar' para menu principal"
+    }]).then((answer) => {
+        const accountName = answer['accountName']
+        
+        if(accountName === 'voltar' || accountName === 'Voltar' || accountName === 'VOLTAR'){
+            return operation()
+        }
+        if(!checkAccount(accountName)){ //Se a conta não existir...
+            return deleteAccount()
+        }
+        if(checkAccount(accountName)){ //Se a conta existir...
+            fs.unlink(  //Deletar o arquivo na pasta accounts
+                `accounts/${accountName}.json`,
+                function(err){
+                    if(err){
+                        console.log(err)
+                        return
+                    }
+                    console.log(chalk.blue(`A conta ${accountName} foi removida com sucesso!`))
+                    operation()
+                }
+                )
+       
+            }
+    }).catch((err) => console.log(err))
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
